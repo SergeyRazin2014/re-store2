@@ -2,47 +2,60 @@ import React, { Component } from 'react';
 import BookListItem from '../book-list-item';
 import { connect } from 'react-redux';
 import withBookStoreService from '../hoc';
-import booksLoaded from '../../actioncreators';
+import { fetchBooks } from '../../actioncreators';
+import Spinner from '../spinner';
+import ErrorIndicator from '../error-indicator'
 
-class BookList extends Component {
+const BookList = ({ books }) => {
+    let bookListItems = books.map((book) => {
+        return <BookListItem book={book} />
+    });
 
+    return (
+        <ul>
+            {bookListItems}
+        </ul>
+    );
+}
+
+
+class BookListContainer extends Component {
     componentDidMount() {
-
-
-        const { bookstoreService } = this.props;
-        const data = bookstoreService.getBooks();
-
-        this.props.booksLoaded(data);
+        this.props.fetchBooks();
     }
 
+
     render() {
-        const { books } = this.props;
+        const { books, loading, err } = this.props;
 
-        let bookListItems = books.map((book) => {
-            return <BookListItem book={book} />
-        });
+        if (loading) {
+            return <Spinner />
+        }
 
-        return (
-            <ul>
-                {bookListItems}
-            </ul>
-        );
+        if (err) {
+            return <ErrorIndicator />
+        }
+
+        return <BookList books={books} />
     }
 }
 
 const mapStateToProps = (state) => {
+
     return {
         books: state.books,
+        loading: state.loading,
+        err: state.err,
     }
 }
 
-const mapDispatchToProps = (dispatch) => {
+const mapDispatchToProps = (dispatch, ownProps) => {
+
     return {
-        booksLoaded: (newBooks) => {
-            dispatch(booksLoaded(newBooks))
-        }
+        fetchBooks: fetchBooks(ownProps.bookstoreService, dispatch),
     }
+
 }
 
 
-export default withBookStoreService()(connect(mapStateToProps, mapDispatchToProps)(BookList));
+export default withBookStoreService()(connect(mapStateToProps, mapDispatchToProps)(BookListContainer));
